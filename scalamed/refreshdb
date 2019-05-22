@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+# This will run makemigrations and migrate for the django appliciation after
+# deleting the current migrations. You may or may not need to delete your
+# currently database as well, by default this is ./db.sqlite3
+
+dryrun=0
+database="none"
+
+while [[ $# -gt 0 ]]; do
+
+    key="$1"
+
+    case $key in
+        --dryrun)
+            dryrun=1
+            ;;
+        --db)
+            database=$2
+            shift
+            ;;
+        *)
+            echo "Unknown argument '${key}'"
+            exit 1
+            ;;
+   esac
+   shift
+done
+
+# Check that the virtual environment is enabled
+if ! env | grep VIRTUAL_ENV &>/dev/null; then
+    echo "You need to activate your virtual environment."
+    exit 1
+fi
+
+# Find all the migration folders for each application and remove the migrations
+for dir in $(find . -name migrations -not -path '*/\.*'); do
+    for file in $(ls $dir | awk '/[0-9]{4}.*\.py$/'); do
+        filename="${dir}/${file}"
+        echo "Deleting $filename"
+        if [[ "${dryrun}" -eq 1 ]]; then
+            continue
+        fi
+        if ! rm "$filename"; then
+            echo "> Failed."
+            exit 1
+        fi
+    done
+done
+
+if [[ "$database" != "none" ]]; then
+    echo "Deleting database: $database"
+    if [[ "${dryrun}" -eq 0 ]]; then
+        rm $database
+    fi
+fi
+
+# Find the manage.py script
+if [[ -x "./manage.py" ]]; then
+    m="manage.py"
+elif [[ -x "./manage" ]]; then
+    m="manage"
+else
+    echo "where is the manage script!!"
+    exit 1
+fi
+
+if [[ "${dryrun}" -eq 1 ]]; then
+    exit 0
+fi
+
+if ! ./${m} makemigrations; then
+    echo "> failed to makemigrations"
+    exit 1
+fi
+
+if ! ./${m} migrate; then
+    echo "> failed to migrate"
+    exit 1
+fi

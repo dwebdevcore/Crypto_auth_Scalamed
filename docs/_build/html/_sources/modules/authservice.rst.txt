@@ -1,0 +1,17 @@
+Auth Service
+============
+
+.. automodule:: authservice.managers
+    :members:
+
+.. automodule:: authservice.models
+    :members:
+
+.. automodule:: authservice.responsemessage
+    :members:
+
+.. automodule:: authservice.serializers
+    :members:
+
+.. automodule:: authservice.views
+    :members:
